@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#1e3a8a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>일본 사전 현장답사</title>
+  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
+  <script>
+    if (window.tailwind) tailwind.config = {
+      theme: { extend: { fontFamily: { sans: ['"Noto Sans KR"', 'system-ui', 'sans-serif'] } } }
+    };
+  </script>
+  <style>
+    html { scroll-behavior: smooth; -webkit-tap-highlight-color: transparent; }
+    body { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+    .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+    section { scroll-margin-top: 12px; }
+    /* iOS 확대 방지: 입력창 글자 16px 이상 */
+    input, select, textarea { font-size: 16px !important; }
+    details > summary { list-style: none; }
+    details > summary::-webkit-details-marker { display: none; }
+    details[open] .chev { transform: rotate(180deg); }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans antialiased">
+
+  <!-- ===================== 헤더 ===================== -->
+  <header class="bg-gradient-to-br from-blue-900 to-blue-700 text-white px-4 pt-6 pb-10">
+    <div class="max-w-lg mx-auto">
+      <div class="flex items-center justify-between">
+        <span id="tripBadge" class="text-xs font-medium bg-white/15 rounded-full px-3 py-1"></span>
+        <span id="netBadge" class="text-xs font-medium rounded-full px-3 py-1 bg-emerald-400/20 text-emerald-100">● 온라인</span>
+      </div>
+      <h1 id="tripTitle" class="mt-3 text-2xl font-bold leading-snug"></h1>
+      <p id="tripSubtitle" class="mt-1 text-sm text-blue-100"></p>
+    </div>
+  </header>
+
+  <main class="max-w-lg mx-auto px-4 -mt-6 space-y-5">
+
+    <!-- ===================== 상단: 출장 개요 ===================== -->
+    <section id="overview" class="bg-white rounded-2xl shadow-sm p-5">
+      <h2 class="text-base font-bold text-slate-900 mb-3">📋 답사 개요</h2>
+      <dl id="overviewList" class="divide-y divide-slate-100"></dl>
+
+      <details class="mt-3 rounded-xl bg-slate-50">
+        <summary class="flex items-center justify-between px-4 py-3 cursor-pointer select-none">
+          <span class="text-sm font-bold text-slate-700">💰 예상 비용</span>
+          <span class="flex items-center gap-2">
+            <span id="costTotal" class="text-sm font-bold text-blue-700"></span>
+            <span class="chev text-slate-400 transition">▾</span>
+          </span>
+        </summary>
+        <div class="px-4 pb-4">
+          <ul id="costList" class="divide-y divide-slate-200 text-sm"></ul>
+          <p class="text-[11px] text-slate-400 mt-2">※ 위 경비는 환율변동 상황에 따라 변경될 수 있음.</p>
+        </div>
+      </details>
+    </section>
+
+    <!-- ===================== 중단: 상세 일정표 ===================== -->
+    <section id="schedule" class="bg-white rounded-2xl shadow-sm p-5">
+      <h2 class="text-base font-bold text-slate-900 mb-3">🗓️ 세부 답사 일정</h2>
+      <div id="dayTabs" class="grid grid-cols-4 gap-2"></div>
+      <div id="dayDetail" class="mt-4"></div>
+      <p class="text-[11px] text-slate-400 mt-3">※ 위 상기 일정은 현지 상황에 따라 변동될 수 있음.</p>
+    </section>
+
+    <!-- ===================== 장소 / 연락처 ===================== -->
+    <section id="places" class="bg-white rounded-2xl shadow-sm p-5">
+      <h2 class="text-base font-bold text-slate-900 mb-1">📍 답사 장소 · 연락처</h2>
+      <p class="text-xs text-slate-500 mb-3">전화번호를 누르면 바로 걸리고, 지도 버튼은 구글 지도로 열립니다.</p>
+      <div id="placeList" class="space-y-4"></div>
+    </section>
+
+    <!-- ===================== 안전점검표 ===================== -->
+    <section id="checklist" class="bg-white rounded-2xl shadow-sm p-5">
+      <h2 class="text-base font-bold text-slate-900 mb-1">✅ 현장답사 안전점검표</h2>
+      <p class="text-xs text-slate-500 mb-3">항목을 누를 때마다 <b class="text-emerald-600">적합</b> → <b class="text-rose-600">부적합</b> → 미확인 순으로 바뀝니다. 점검 대상별로 기기에 저장돼요.</p>
+      <label for="checkTarget" class="block text-sm font-medium text-slate-700 mb-1">점검 대상</label>
+      <select id="checkTarget"
+        class="w-full h-12 rounded-xl border border-slate-300 px-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"></select>
+      <div id="checkProgress" class="mt-3 text-sm text-slate-600"></div>
+      <div id="checkGroups" class="mt-3 space-y-2"></div>
+      <button id="checkSendBtn" type="button"
+        class="mt-4 w-full h-12 rounded-xl bg-slate-800 text-white text-sm font-bold active:bg-slate-900 disabled:opacity-60">점검 결과를 구글 시트로 전송</button>
+    </section>
+
+    <!-- ===================== 하단: 메모 입력 폼 ===================== -->
+    <section id="memo" class="bg-white rounded-2xl shadow-sm p-5">
+      <h2 class="text-base font-bold text-slate-900 mb-1">✍️ 현장 메모 / 검토사항</h2>
+      <p class="text-xs text-slate-500 mb-4">입력 내용은 기기에 자동 임시저장되며, 전송 실패 시 연결되면 다시 보낼 수 있어요.</p>
+
+      <form id="memoForm" class="space-y-4" novalidate>
+        <div>
+          <label for="memoDatetime" class="block text-sm font-medium text-slate-700 mb-1">날짜 / 시간</label>
+          <div class="flex gap-2">
+            <input id="memoDatetime" type="datetime-local" required
+              class="flex-1 min-w-0 h-12 rounded-xl border border-slate-300 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <button type="button" id="nowBtn"
+              class="h-12 px-4 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium active:bg-slate-200">지금</button>
+          </div>
+        </div>
+
+        <div>
+          <label for="memoAuthor" class="block text-sm font-medium text-slate-700 mb-1">작성자</label>
+          <input id="memoAuthor" type="text" required placeholder="이름 또는 직책" autocomplete="name"
+            class="w-full h-12 rounded-xl border border-slate-300 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <div id="authorChips" class="flex flex-wrap gap-2 mt-2"></div>
+        </div>
+
+        <div>
+          <span class="block text-sm font-medium text-slate-700 mb-1">분류</span>
+          <div id="categoryChips" class="flex flex-wrap gap-2"></div>
+        </div>
+
+        <div>
+          <label for="memoRelated" class="block text-sm font-medium text-slate-700 mb-1">관련 장소</label>
+          <select id="memoRelated"
+            class="w-full h-12 rounded-xl border border-slate-300 px-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">선택 안 함</option>
+          </select>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label for="memoContent" class="block text-sm font-medium text-slate-700">내용</label>
+            <span id="charCount" class="text-xs text-slate-400">0 / 2000</span>
+          </div>
+          <textarea id="memoContent" rows="5" maxlength="2000" required placeholder="현장 확인 사항, 평가 내용, 검토 의견 등을 입력하세요"
+            class="w-full rounded-xl border border-slate-300 px-3 py-3 leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+        </div>
+
+        <button id="submitBtn" type="submit"
+          class="w-full h-14 rounded-2xl bg-blue-700 text-white text-base font-bold shadow-md active:scale-[0.98] active:bg-blue-800 transition disabled:opacity-60 disabled:active:scale-100 flex items-center justify-center gap-2">
+          <svg id="spinner" class="hidden w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" class="opacity-25"></circle>
+            <path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path>
+          </svg>
+          <span id="submitLabel">구글 시트로 전송</span>
+        </button>
+      </form>
+
+      <!-- 기기 저장 내역 -->
+      <div class="mt-6">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-sm font-bold text-slate-900">내 기기 저장 내역</h3>
+          <button id="retryBtn" type="button"
+            class="hidden text-sm font-medium text-blue-700 bg-blue-50 rounded-lg px-3 py-2 active:bg-blue-100">미전송 다시 보내기</button>
+        </div>
+        <ul id="historyList" class="space-y-2"></ul>
+        <p id="historyEmpty" class="text-sm text-slate-400 py-4 text-center">아직 작성한 메모가 없습니다.</p>
+      </div>
+    </section>
+
+    <p class="text-center text-xs text-slate-400 pb-4">2026학년도 학생국제교류 사전 현장답사</p>
+  </main>
+
+  <!-- ===================== 하단 고정 내비게이션 (엄지 영역) ===================== -->
+  <nav class="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t border-slate-200 safe-bottom z-30">
+    <div class="max-w-lg mx-auto grid grid-cols-5 h-16">
+      <a href="#overview" class="flex flex-col items-center justify-center text-slate-500 active:text-blue-700">
+        <span class="text-xl leading-none">📋</span><span class="text-[11px] mt-1">개요</span>
+      </a>
+      <a href="#schedule" class="flex flex-col items-center justify-center text-slate-500 active:text-blue-700">
+        <span class="text-xl leading-none">🗓️</span><span class="text-[11px] mt-1">일정</span>
+      </a>
+      <a href="#places" class="flex flex-col items-center justify-center text-slate-500 active:text-blue-700">
+        <span class="text-xl leading-none">📍</span><span class="text-[11px] mt-1">장소</span>
+      </a>
+      <a href="#checklist" class="flex flex-col items-center justify-center text-slate-500 active:text-blue-700">
+        <span class="text-xl leading-none">✅</span><span class="text-[11px] mt-1">점검</span>
+      </a>
+      <a href="#memo" class="flex flex-col items-center justify-center text-slate-500 active:text-blue-700 relative">
+        <span class="text-xl leading-none">✍️</span><span class="text-[11px] mt-1">메모</span>
+        <span id="pendingDot" class="hidden absolute top-2 right-[calc(50%-20px)] min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center"></span>
+      </a>
+    </div>
+  </nav>
+
+  <!-- 토스트 알림 -->
+  <div id="toast" class="fixed left-1/2 -translate-x-1/2 bottom-24 z-40 w-[calc(100%-32px)] max-w-md pointer-events-none
+    opacity-0 translate-y-4 transition duration-300">
+    <div id="toastBox" class="rounded-xl px-4 py-3 text-sm font-medium text-white shadow-lg text-center"></div>
+  </div>
+
+  <script>
+  /* =====================================================================
+   * 1) 설정: Apps Script 배포 후 받은 웹 앱 URL을 붙여넣으세요.
+   * ===================================================================== */
+  const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyv5hG2toph7_Jp1kvtv8Z6yWPjV5O7MYligDIgpfhsU1jtqif3m5lw3V6R-AcfmCQh/exec';
+  const API_TOKEN = ''; // code.gs 의 API_TOKEN 과 동일하게 (사용하지 않으면 빈 값)
+
+  /* =====================================================================
+   * 2) 답사 계획서 데이터 (「2026학년도 학생국제교류 국외(일본) 현장체험학습
+   *    사전 현장답사 계획」 기준)
+   * ===================================================================== */
+  const TRIP = {
+    id: '2026-japan-presurvey',
+    badge: '2026학년도 학생국제교류',
+    title: '국외(일본) 현장체험학습 사전 현장답사',
+    subtitle: '2026.10.24.(토) ~ 10.27.(화) · 도쿄 · 오사카',
+    overview: [
+      { label: '기간', value: '2026.10.24.(토) ~ 10.27.(화) · 3박 4일' },
+      { label: '장소', value: '일본 도쿄, 오사카' },
+      { label: '목적', value: '12월 학생 국외 현장체험학습 대비 숙소·체험장소·식당 안전 점검 및 이동 동선 확인, 상대교 교류 일정 협의 및 MOU 체결 협의' },
+      { label: '답사자', value: '교장, 부장교사, 담당교사 (3명)' },
+      { label: '본 행사', value: '12/9(수) 미나미다이라 고교 방문 등' },
+    ],
+    roles: ['교장', '부장교사', '담당교사'],
+    costs: [
+      { item: '항공권', amount: 1866300, detail: '622,100원 × 3명', note: '사전결제' },
+      { item: '숙소(도쿄)', amount: 494502 + 945019, detail: '교장 1인 × 도쿄 2박 494,502원 / 교사 2인 × 도쿄 2박 945,019원', note: '사전결제' },
+      { item: '숙소(오사카)', amount: 224950 + 208602, detail: '교장 1인 × 오사카 1박 224,950원 / 교사 2인 × 오사카 1박 208,602원', note: '사전결제' },
+      { item: '신칸센(도쿄-오사카)', amount: 405000, detail: '135,000원 × 3명', note: '사전결제 또는 추후 증빙자료 제출' },
+      { item: '공항 리무진(도쿄)', amount: 39000, detail: '13,000원 × 3명', note: '사전결제 또는 추후 증빙자료 제출' },
+      { item: '공항 특급열차(오사카)', amount: 45300, detail: '15,100원 × 3명', note: '사전결제 또는 추후 증빙자료 제출' },
+      { item: '공항 리무진(국내)', amount: 120000, detail: '20,000원 × 3명 × 2회(왕복)', note: '증빙자료 제출' },
+      { item: '여행자 보험', amount: 50100, detail: '16,700원 × 3명', note: '사전결제' },
+      { item: '식비', amount: null, detail: '교장 1명 × (107달러 × 3일 + 78달러 × 1일), 교사 2명 × (81달러 × 3일 + 59달러 × 1일)', note: '달러 환산 적용 · 국외 여비지급 규정' },
+      { item: '일비', amount: null, detail: '35달러 × 4일 × 교장 + 30달러 × 4일 × 교사 2명', note: '달러 환산 적용 · 국외 여비지급 규정' },
+    ],
+    places: [
+      { group: '도쿄 숙소', name: '신주쿠 워싱턴 호텔', addr: '3 Chome-2-9 Nishishinjuku, Shinjuku City, Tokyo 160-0023', tel: '81-3-3343-3111' },
+      { group: '도쿄 체험활동 장소', name: '미나미다이라 고등학교', addr: '8-2-3 Minamidaira, Hino, Tokyo 191-0041', tel: '81-4-2325-9331' },
+      { group: '도쿄 체험활동 장소', name: '도쿄 도청 전망대', addr: '2-8-1 Nishi-Shinjuku, Shinjuku City, Tokyo 163-8001', tel: '81-3-5320-7890' },
+      { group: '도쿄 체험활동 장소', name: '도쿄타워', addr: '4-2-8 Shibakoen, Minato-ku, Tokyo 105-0011', tel: '+81-3-3433-5111' },
+      { group: '도쿄 체험활동 장소', name: '도쿄대학교 캠퍼스', addr: '7 Chome-3-1 Hongo, Bunkyo City, Tokyo 113-8654', tel: '+81-3-3812-2111' },
+      { group: '도쿄 체험활동 장소', name: '도쿄 디즈니랜드', addr: '1-1 Maihama, Urayasu-shi, Chiba-ken, 279-8511', tel: '+81-50-3090-2613' },
+      { group: '도쿄 체험활동 장소', name: '아사쿠사', addr: 'Asakusa, Taito-ku, Tokyo 111-0032', tel: '' },
+      { group: '도쿄 체험활동 장소', name: '시부야/하라주쿠 거리', addr: '2-2 Dogenzaka, Shibuya-ku, Tokyo 150-0043', tel: '' },
+      { group: '도쿄 식당', name: '와쇼쿠사토(일정식)', addr: '3-8-2, Matsue, Edogawa-ku, Tokyo, 132-0025', tel: '81-3-5607-1608' },
+      { group: '도쿄 식당', name: '샤부요(샤부샤부)', addr: 'Shinjuku NOWA 6F, 3-37-12 Shinjuku, Shinjuku-ku, Tokyo 160-0022', tel: '81-50-1721-7640' },
+      { group: '도쿄 식당', name: '쿠라스시(일식,스시)', addr: '2F, Crosspoint Okachimachi, 4-33-1, Taito, Taito-ku, Tokyo 110-0016', tel: '81-3-6284-3610' },
+      { group: '오사카', name: '코리가오카 고등학교', addr: '2 Chome-18-1 Higashinakaburi, Hirakata, Osaka 573-0093', tel: '81-72-832-3421' },
+    ],
+    schedule: [
+      {
+        date: '2026-10-24', label: '1일차', day: '10/24 (토)',
+        title: '입국 수속 및 숙소 점검',
+        route: '김포공항 → 하네다공항 → 도쿄 숙소',
+        moves: [{ icon: '✈️', code: 'KE2105', from: '김포 1터미널', dep: '18:45', to: '하네다 3터미널', arr: '21:00' }],
+        items: [
+          { text: '현지 공항 입국 절차' },
+          { text: '12월 학생 단체 숙박을 위한 숙소 위생·소방 안전 점검', place: '신주쿠 워싱턴 호텔' },
+        ],
+        roles: [
+          ['교장', '사전답사단 총괄 지휘 및 입국 동선 총괄 점검'],
+          ['부장교사/담당교사', '숙소 객실 배정 구조, 비상구 및 소방 시설 점검'],
+        ],
+        contacts: ['호텔 예약 및 안내 담당자'],
+      },
+      {
+        date: '2026-10-25', label: '2일차', day: '10/25 (일)',
+        title: '체험학습 현장 및 이동 동선 점검',
+        route: '도쿄 숙소 → 디즈니랜드 → 아사쿠사 → 도쿄타워',
+        moves: [],
+        items: [
+          { tag: '답사 1', place: '도쿄 디즈니랜드', head: '인문학과 예술, 로보틱스 등의 과학기술의 융합 탐방지', text: '단체 대중교통 이동 동선 및 단체 입구 위치 확인' },
+          { tag: '답사 2', place: '아사쿠사', head: '역사 문화탐방지', text: '학생 자유시간 지역 안전성 확인 및 단체 식당 사전 점검' },
+          { tag: '답사 3', place: '시부야/하라주쿠 거리', head: '시부야/하라주쿠 거리', text: '청소년 문화 거리 탐방 시 학생 자유 활동 안전 운영 가능 구역 설정 및 인파 밀집 구간·집결 장소 확인' },
+          { tag: '답사 4', place: '도쿄타워', head: '내진설계 건축공학', text: '주변 접근성, 승하차 구역 및 전망대 이용 동선 확인' },
+        ],
+        roles: [
+          ['교장', '대규모 인파 밀집 지역 및 대중교통 이동 노선 현지 안전 관리 체계 최종 승인'],
+          ['부장교사', '체험학습 장소(디즈니랜드·아사쿠사·도쿄타워)의 교육적 적절성 평가, 단체 입장 및 지하철·도보 이동 동선·안전 점검'],
+          ['담당교사', '아사쿠사 및 도쿄타워 인근 학생 이용 식당 위생·안전 점검, 비상시 의료기관 및 소방서 연계 현지 비상 연락 구호 체계 구축'],
+        ],
+        contacts: [],
+      },
+      {
+        date: '2026-10-26', label: '3일차', day: '10/26 (월)',
+        title: '학교방문 협의 / 문화탐방 답사 / 오사카 이동',
+        route: '도쿄 숙소 → 미나미다이라 고교 → 도쿄도청 → 시부야/하라주쿠 → 도쿄대 → 오사카 숙소',
+        moves: [{ icon: '🚄', code: '신칸센', from: '도쿄역', dep: '', to: '신오사카역', arr: '' }],
+        items: [
+          { tag: '답사 5', place: '미나미다이라 고등학교', head: '미나미다이라 고교 방문', text: '12/9(수) 본 행사 시 현지 수업 참여, 동아리 교류 및 학생 소통 프로그램 세부 일정 조율' },
+          { tag: '답사 6', place: '도쿄대학교 캠퍼스', head: '도쿄대', text: '도쿄대 재학생 연계 캠퍼스 투어 동선 및 멘토링 장소 사전 실측' },
+          { tag: '답사 7', place: '도쿄 도청 전망대', head: '도쿄도청', text: '행정 거점 관람 및 학생 자유 활동 안전 운영 가능 구역 설정' },
+          { tag: '이동', text: '도쿄역 → 오사카(신오사카역) 신칸센 탑승' },
+        ],
+        roles: [
+          ['교장', '미나미다이라 고교 방문 시 상대교 관리자 회의 주재, 도쿄~오사카 이동 포함 전 일정 현지 안전 관리 체계 최종 승인'],
+          ['부장교사', '미나미다이라 고교 국제교류 담당교사와 현지 수업 교류 세부 일정 협의, 도쿄대 멘토링 이동 동선 및 체험 프로그램 적절성 평가'],
+          ['담당교사', '미나미다이라 고교 및 도쿄대 인근 학생 이용 식당 위생·안전 점검'],
+        ],
+        contacts: ['미나미다이라 고등학교 관리자 및 국제교류 담당교사'],
+      },
+      {
+        date: '2026-10-27', label: '4일차', day: '10/27 (화)',
+        title: 'MOU 체결 협의 회의 주재 및 출국',
+        route: '오사카 숙소 → 코리가오카 고교 → 간사이공항 → 귀국',
+        moves: [{ icon: '✈️', code: 'KE5724', from: '간사이 1터미널', dep: '19:45', to: '인천 2터미널', arr: '22:00' }],
+        items: [
+          { tag: '답사 8', place: '코리가오카 고등학교', head: '코리가오카 고교 방문', text: '지속적 학생 국제교류 확대를 위한 MOU 체결 협의 회의 주재 및 상대교 관리자 교류 회의 (오사카한국교육원 협력 및 동행)' },
+          { text: '간사이 공항 이동, 출국 수속 및 귀국' },
+        ],
+        roles: [
+          ['교장', '코리가오카 고교 방문 시 MOU 체결 협의 및 상대교 관리자 회의 주재, 오사카 일정 및 귀국 이동 포함 현지 안전 관리 체계 최종 승인'],
+          ['부장교사', '내년도 학생 교류 프로그램(수업 참관, 동아리 교류 등)의 교육적 적절성 평가 및 세부 협력 방향 협의'],
+          ['담당교사', '내년 방문에 대비한 학교 주변 환경 및 이동 동선·안전 여건 사전 점검'],
+        ],
+        contacts: ['코리가오카 고교 교장, 교감, 국제교류담당교사', '오사카한국교육원장 및 파견교사(통역)'],
+      },
+    ],
+    checklist: [
+      { group: '건물', items: [
+        '계획한 학생 단체를 받을 수 있는 규모인가?',
+        '학생 단체 활동을 할 수 있는 시설을 갖추고 있는가?',
+        '식당의 규모나 위치가 학생이 사용하기에 적절한가?',
+        '숙소 주위가 위험에 노출되어 있지는 않은가?',
+        '학생들에게 방송 등 안내할 수 있는 시설을 갖추고 있는가?',
+      ]},
+      { group: '내부 시설', items: [
+        '학생들을 여러 개의 층으로 분산 배치 가능한가?',
+        '학생들이 안전한 휴식을 위하여 방별 적정 인원을 배정하였는가?',
+        '시설물들은 안전한가? (가구, 유리 창문, 세면대 등)',
+        '외부의 소음이 차단되는가?',
+        '학생 안전을 위한 숙소의 문단속 방범장치가 제대로 작동되는가?',
+      ]},
+      { group: '안전', items: [
+        '관할 소방서 또는 지자체에서 해당 시설에 대한 화재 예방 점검을 실시하였는가? (필요시 관할 소방서에 화재 예방 점검 요청)',
+        '학생들의 이동 통로나 비상구는 확보되어 있는가?',
+        '유리 창문의 안전 잠금장치가 작동하고 있는가?',
+        '계단이나 난간에 미끄럼방지 테이프나 안전장치가 되어 있는가?',
+        '방 사이의 베란다가 학생들이 넘어 다닐 정도로 설계되어 위험하지는 않은가?',
+        '화재 위험시설의 통제(전기레인지, 가스레인지, 취사도구 등)가 가능한가?',
+      ]},
+      { group: '생활지도', items: [
+        '숙소 내 또는 인근에 청소년 유해업소가 있지는 않은가?',
+        '방안에 TV가 있는 경우 청소년 유해프로그램을 통제할 수 있는가?',
+        '일반객실과 학생 숙소의 구분 통제가 가능한가? (층별 통제 가능 여부)',
+        '일정 종료 후 학생 및 외부인의 출입을 파악할 수 있는 시설이 갖추어졌는가?',
+        '숙소 내 편의시설의 사용 시간을 통제할 수 있는가?',
+      ]},
+      { group: '위생', items: [
+        '식당의 위생상태가 청결한가?',
+        '방안 침구의 보관 및 위생 상태는 청결한가?',
+        '욕실이나 공동세면장의 청소 상태는 깨끗한가?',
+        '화장실의 청결 상태 및 환기 시설은 정상적인가?',
+        '음수대 및 정수기 등의 물 위생 상태는 양호한가?',
+      ]},
+      { group: '식당', items: [
+        '학생 단체를 받을 수 있는 규모와 경험을 가지고 있는가?',
+        '식단 구성이 학생들의 영양기준과 선호에 적합한가?',
+        '조리실의 청결 상태가 양호한가?',
+        '조리사들은 위생복과 위생모를 착용하고 있는가?',
+        '식당은 이동시간을 최적화 할 수 있는 곳에 위치해 있는가?',
+      ]},
+      { group: '일정 및 코스', items: [
+        '학생의 발달 단계에 맞는 일정인가?',
+        '코스 선정이 교육과정과 연계해 교육적 효과가 있는가?',
+        '안전교육 등 자체 교육활동을 계획하고 있는가?',
+        '이동 동선을 고려해 효율적인 코스 선정이 이루어졌는가?',
+        '상업 및 소비, 오락시설에 과도하게 노출될 염려는 없는가?',
+      ]},
+    ],
+  };
+
+  const CATEGORIES = ['장소 평가', '숙소', '이동 동선', '식당·위생', '안전', '교류 협의', '기타'];
+  const CIRCLED = '①②③④⑤⑥⑦⑧⑨⑩';
+
+  /* =====================================================================
+   * 3) 로컬 저장소 (try/catch 로 감싸 사생활 보호 모드에서도 동작)
+   * ===================================================================== */
+  const LS_MEMOS = `tripMemo:${TRIP.id}:memos`;
+  const LS_DRAFT = `tripMemo:${TRIP.id}:draft`;
+  const LS_CHECK = `tripMemo:${TRIP.id}:checklist`;
+  const LS_AUTHOR = 'tripMemo:author';
+
+  const store = {
+    get(key, fallback) {
+      try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
+      catch { return fallback; }
+    },
+    set(key, value) {
+      try { localStorage.setItem(key, JSON.stringify(value)); return true; }
+      catch { return false; }
+    }
+  };
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const won = (n) => n.toLocaleString('ko-KR') + '원';
+
+  /** '81-03-6284-3610' 같은 표기를 국제전화 tel: 링크용 +81... 로 정리 */
+  function telHref(tel) {
+    let d = tel.replace(/\D/g, '');
+    if (d.startsWith('81')) d = d.slice(2);
+    return 'tel:+81' + d.replace(/^0+/, '');
+  }
+  const mapHref = (p) => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(p.addr);
+
+  /* =====================================================================
+   * 4) 개요 / 일정 / 장소 렌더링
+   * ===================================================================== */
+  function renderOverview() {
+    $('tripBadge').textContent = TRIP.badge;
+    $('tripTitle').textContent = TRIP.title;
+    $('tripSubtitle').textContent = TRIP.subtitle;
+
+    $('overviewList').innerHTML = TRIP.overview.map(o => `
+      <div class="flex py-3 gap-3">
+        <dt class="w-14 shrink-0 text-sm font-medium text-blue-700">${esc(o.label)}</dt>
+        <dd class="text-sm text-slate-800 leading-relaxed">${esc(o.value)}</dd>
+      </div>`).join('');
+
+    const total = TRIP.costs.reduce((s, c) => s + (c.amount || 0), 0);
+    $('costTotal').textContent = won(total) + ' +α';
+    $('costList').innerHTML = TRIP.costs.map(c => `
+      <li class="py-2">
+        <div class="flex justify-between gap-2">
+          <span class="font-medium text-slate-800">${esc(c.item)}</span>
+          <span class="font-bold text-slate-900 shrink-0">${c.amount ? won(c.amount) : '달러 환산'}</span>
+        </div>
+        <div class="text-xs text-slate-500 mt-0.5">${esc(c.detail)}</div>
+        <div class="text-[11px] text-slate-400">${esc(c.note)}</div>
+      </li>`).join('') + `
+      <li class="py-2 flex justify-between font-bold text-blue-800">
+        <span>원화 소계 (식비·일비 제외)</span><span>${won(total)}</span>
+      </li>`;
+  }
+
+  function renderTabs(active) {
+    $('dayTabs').innerHTML = TRIP.schedule.map((d, i) => `
+      <button type="button" data-day="${i}"
+        class="rounded-xl py-2 text-center transition ${i === active
+          ? 'bg-blue-700 text-white shadow'
+          : 'bg-slate-100 text-slate-600 active:bg-slate-200'}">
+        <div class="text-[11px] ${i === active ? 'text-blue-100' : 'text-slate-400'}">${esc(d.label)}</div>
+        <div class="text-sm font-bold">${esc(d.day.split(' ')[0])}</div>
+        <div class="text-[11px]">${esc(d.day.split(' ')[1] || '')}</div>
+      </button>`).join('');
+    $('dayTabs').querySelectorAll('button').forEach(b =>
+      b.addEventListener('click', () => renderTabs(Number(b.dataset.day))));
+    renderDay(TRIP.schedule[active]);
+  }
+
+  function renderDay(d) {
+    const moves = d.moves.map(m => `
+      <div class="flex items-center gap-3 rounded-xl bg-blue-50 px-4 py-3">
+        <span class="text-2xl">${m.icon}</span>
+        <div class="flex-1 min-w-0">
+          <div class="text-xs font-bold text-blue-700">${esc(m.code)}</div>
+          <div class="flex items-center gap-2 text-sm font-bold text-slate-900">
+            <span>${esc(m.from)}${m.dep ? ` <span class="text-blue-700">${esc(m.dep)}</span>` : ''}</span>
+            <span class="text-slate-400">→</span>
+            <span>${esc(m.to)}${m.arr ? ` <span class="text-blue-700">${esc(m.arr)}</span>` : ''}</span>
+          </div>
+        </div>
+      </div>`).join('');
+
+    const items = d.items.map(it => `
+      <li class="ml-5 pb-4 last:pb-1 relative">
+        <span class="absolute -left-[29px] top-1 w-4 h-4 rounded-full bg-white border-4 ${it.tag?.startsWith('답사') ? 'border-blue-600' : 'border-slate-300'}"></span>
+        ${it.tag ? `<span class="inline-block text-[11px] font-bold rounded-md px-2 py-0.5 ${it.tag.startsWith('답사') ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-600'}">${esc(it.tag)}</span>` : ''}
+        ${it.head ? `<div class="text-[15px] font-bold text-slate-900 mt-1">${esc(it.head)}</div>` : ''}
+        <div class="text-sm text-slate-700 mt-0.5 leading-relaxed">${esc(it.text)}</div>
+        ${it.place ? `<button type="button" data-memo-place="${esc(it.place)}"
+            class="mt-2 text-xs font-medium text-blue-700 bg-blue-50 rounded-lg px-3 py-2 active:bg-blue-100">✍️ ${esc(it.place)} 메모 쓰기</button>` : ''}
+      </li>`).join('');
+
+    const roles = d.roles.map(([who, what]) => `
+      <li class="py-2">
+        <div class="text-xs font-bold text-blue-700">${esc(who)}</div>
+        <div class="text-sm text-slate-700 leading-relaxed">${esc(what)}</div>
+      </li>`).join('');
+
+    $('dayDetail').innerHTML = `
+      <div class="text-lg font-bold text-slate-900">${esc(d.title)}</div>
+      <div class="text-xs text-slate-500 mt-1 leading-relaxed">🧭 ${esc(d.route)}</div>
+      ${moves ? `<div class="mt-3 space-y-2">${moves}</div>` : ''}
+      <ol class="mt-4 relative border-l-2 border-blue-100 ml-2">${items}</ol>
+      <details class="mt-3 rounded-xl bg-slate-50" open>
+        <summary class="flex items-center justify-between px-4 py-3 cursor-pointer select-none">
+          <span class="text-sm font-bold text-slate-700">👥 역할 분담</span>
+          <span class="chev text-slate-400 transition">▾</span>
+        </summary>
+        <ul class="px-4 pb-3 divide-y divide-slate-200">${roles}</ul>
+      </details>
+      ${d.contacts.length ? `
+      <div class="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+        <div class="text-xs font-bold text-amber-800">🤝 접촉 예정 인물</div>
+        ${d.contacts.map(c => `<div class="text-sm text-amber-900 mt-1">${esc(c)}</div>`).join('')}
+      </div>` : ''}`;
+
+    $('dayDetail').querySelectorAll('[data-memo-place]').forEach(b =>
+      b.addEventListener('click', () => startMemoFor(b.dataset.memoPlace)));
+  }
+
+  function renderPlaces() {
+    const groups = [...new Set(TRIP.places.map(p => p.group))];
+    $('placeList').innerHTML = groups.map(g => `
+      <div>
+        <h3 class="text-xs font-bold text-slate-500 mb-2">${esc(g)}</h3>
+        <ul class="space-y-2">
+          ${TRIP.places.filter(p => p.group === g).map(p => `
+          <li class="rounded-xl border border-slate-200 p-3">
+            <div class="text-[15px] font-bold text-slate-900">${esc(p.name)}</div>
+            <div class="text-xs text-slate-500 mt-0.5 break-words">${esc(p.addr)}</div>
+            <div class="grid grid-cols-3 gap-2 mt-2">
+              ${p.tel
+                ? `<a href="${telHref(p.tel)}" class="h-10 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-bold flex items-center justify-center active:bg-emerald-100">📞 전화</a>`
+                : `<span class="h-10 rounded-lg bg-slate-50 text-slate-300 text-xs font-bold flex items-center justify-center">📞 없음</span>`}
+              <a href="${mapHref(p)}" target="_blank" rel="noopener" class="h-10 rounded-lg bg-blue-50 text-blue-700 text-xs font-bold flex items-center justify-center active:bg-blue-100">🗺️ 지도</a>
+              <button type="button" data-memo-place="${esc(p.name)}" class="h-10 rounded-lg bg-slate-100 text-slate-700 text-xs font-bold active:bg-slate-200">✍️ 평가</button>
+            </div>
+            ${p.tel ? `<div class="text-[11px] text-slate-400 mt-1">${esc(p.tel)}</div>` : ''}
+          </li>`).join('')}
+        </ul>
+      </div>`).join('');
+    $('placeList').querySelectorAll('[data-memo-place]').forEach(b =>
+      b.addEventListener('click', () => startMemoFor(b.dataset.memoPlace, '장소 평가')));
+  }
+
+  /* =====================================================================
+   * 5) 안전점검표 (점검 대상별 상태를 기기에 저장)
+   * ===================================================================== */
+  const checkState = store.get(LS_CHECK, {});
+
+  function renderChecklist() {
+    const target = $('checkTarget').value;
+    const st = checkState[target] || {};
+    let done = 0, bad = 0, total = 0;
+
+    $('checkGroups').innerHTML = TRIP.checklist.map((g, gi) => {
+      const rows = g.items.map((q, qi) => {
+        const key = `${gi}-${qi}`;
+        const v = st[key];
+        total++; if (v) done++; if (v === 'x') bad++;
+        const badge = v === 'o' ? 'bg-emerald-600 text-white' : v === 'x' ? 'bg-rose-600 text-white' : 'bg-slate-100 text-slate-400';
+        return `
+          <li>
+            <button type="button" data-key="${key}" class="w-full flex items-start gap-3 py-3 text-left active:bg-slate-50">
+              <span class="shrink-0 w-14 h-8 rounded-lg text-xs font-bold flex items-center justify-center ${badge}">${v === 'o' ? '적합' : v === 'x' ? '부적합' : '미확인'}</span>
+              <span class="text-sm text-slate-700 leading-relaxed">${CIRCLED[qi]} ${esc(q)}</span>
+            </button>
+          </li>`;
+      }).join('');
+      const gDone = g.items.filter((_, qi) => st[`${gi}-${qi}`]).length;
+      return `
+        <details class="rounded-xl border border-slate-200" ${gi === 0 ? 'open' : ''}>
+          <summary class="flex items-center justify-between px-4 py-3 cursor-pointer select-none">
+            <span class="text-sm font-bold text-slate-800">${esc(g.group)}</span>
+            <span class="flex items-center gap-2 text-xs text-slate-500">${gDone}/${g.items.length}<span class="chev text-slate-400 transition">▾</span></span>
+          </summary>
+          <ul class="px-3 pb-1 divide-y divide-slate-100">${rows}</ul>
+        </details>`;
+    }).join('');
+
+    $('checkProgress').innerHTML = `확인 <b>${done}</b> / ${total}` +
+      (bad ? ` · <span class="text-rose-600 font-bold">부적합 ${bad}건</span>` : '');
+
+    $('checkGroups').querySelectorAll('button[data-key]').forEach(b =>
+      b.addEventListener('click', () => {
+        const s = (checkState[target] ||= {});
+        const next = { undefined: 'o', o: 'x', x: undefined }[s[b.dataset.key]];
+        if (next) s[b.dataset.key] = next; else delete s[b.dataset.key];
+        store.set(LS_CHECK, checkState);
+        // 펼침 상태 유지하며 다시 그리기
+        const open = [...$('checkGroups').querySelectorAll('details')].map(d => d.open);
+        renderChecklist();
+        $('checkGroups').querySelectorAll('details').forEach((d, i) => d.open = open[i]);
+      }));
+  }
+
+  function checklistSummary(target) {
+    const st = checkState[target] || {};
+    const lines = [`[안전점검표] ${target}`];
+    TRIP.checklist.forEach((g, gi) => {
+      const marks = g.items.map((_, qi) => {
+        const v = st[`${gi}-${qi}`];
+        return `${CIRCLED[qi]}${v === 'o' ? 'O' : v === 'x' ? 'X' : '-'}`;
+      }).join(' ');
+      lines.push(`· ${g.group}: ${marks}`);
+    });
+    const bads = [];
+    TRIP.checklist.forEach((g, gi) => g.items.forEach((q, qi) => {
+      if (st[`${gi}-${qi}`] === 'x') bads.push(`- [${g.group}] ${q}`);
+    }));
+    if (bads.length) lines.push('', '▶ 부적합 항목', ...bads);
+    return lines.join('\n');
+  }
+
+  async function sendChecklist() {
+    const target = $('checkTarget').value;
+    const author = $('memoAuthor').value.trim();
+    if (!Object.keys(checkState[target] || {}).length) return toast('점검한 항목이 없습니다', 'warn');
+    if (!author) {
+      location.hash = '#memo';
+      return toast('메모 칸에 작성자를 먼저 입력해 주세요', 'warn', $('memoAuthor'));
+    }
+    $('checkSendBtn').disabled = true;
+    await saveAndSend({
+      datetime: localDatetime(new Date()), author,
+      category: '안전점검표', related: target, content: checklistSummary(target)
+    });
+    $('checkSendBtn').disabled = false;
+  }
+
+  /* =====================================================================
+   * 6) 메모 폼: 임시저장(초안) + 전송
+   * ===================================================================== */
+  function localDate(d) {
+    const p = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  }
+  function localDatetime(d) {
+    const p = n => String(n).padStart(2, '0');
+    return `${localDate(d)}T${p(d.getHours())}:${p(d.getMinutes())}`;
+  }
+  function uuid() {
+    if (crypto.randomUUID) return crypto.randomUUID();
+    return 'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+  }
+
+  let category = '';
+  function renderChips() {
+    $('authorChips').innerHTML = TRIP.roles.map(r => `
+      <button type="button" data-author="${esc(r)}"
+        class="h-9 px-3 rounded-full text-sm font-medium ${$('memoAuthor').value === r
+          ? 'bg-blue-700 text-white' : 'bg-slate-100 text-slate-600 active:bg-slate-200'}">${esc(r)}</button>`).join('');
+    $('categoryChips').innerHTML = CATEGORIES.map(c => `
+      <button type="button" data-cat="${esc(c)}"
+        class="h-10 px-4 rounded-full text-sm font-medium ${category === c
+          ? 'bg-blue-700 text-white' : 'bg-slate-100 text-slate-600 active:bg-slate-200'}">${esc(c)}</button>`).join('');
+    $('authorChips').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+      $('memoAuthor').value = b.dataset.author; saveDraft(); renderChips();
+    }));
+    $('categoryChips').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+      category = category === b.dataset.cat ? '' : b.dataset.cat; saveDraft(); renderChips();
+    }));
+  }
+
+  function startMemoFor(place, cat) {
+    $('memoRelated').value = place;
+    if (cat) category = cat;
+    renderChips(); saveDraft();
+    $('memo').scrollIntoView({ behavior: 'smooth' });
+    setTimeout(() => $('memoContent').focus({ preventScroll: true }), 400);
+  }
+
+  function saveDraft() {
+    store.set(LS_DRAFT, {
+      datetime: $('memoDatetime').value,
+      related: $('memoRelated').value,
+      category,
+      content: $('memoContent').value
+    });
+    store.set(LS_AUTHOR, $('memoAuthor').value);
+    $('charCount').textContent = `${$('memoContent').value.length} / 2000`;
+  }
+
+  function restoreDraft() {
+    const d = store.get(LS_DRAFT, null);
+    $('memoAuthor').value = store.get(LS_AUTHOR, '') || '';
+    $('memoDatetime').value = d?.datetime || localDatetime(new Date());
+    if (d?.related) $('memoRelated').value = d.related;
+    if (d?.content) $('memoContent').value = d.content;
+    category = d?.category || '';
+    $('charCount').textContent = `${$('memoContent').value.length} / 2000`;
+  }
+
+  const getMemos = () => store.get(LS_MEMOS, []);
+  const setMemos = (m) => store.set(LS_MEMOS, m);
+  function updateMemo(id, patch) {
+    setMemos(getMemos().map(m => m.id === id ? { ...m, ...patch } : m));
+  }
+
+  /** Apps Script 로 1건 전송. 성공 시 true */
+  async function sendToSheet(memo) {
+    if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes('여기에_배포ID')) {
+      throw new Error('웹 앱 URL이 설정되지 않았습니다');
+    }
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 15000);
+    try {
+      // Content-Type 을 text/plain 으로 보내야 CORS 사전요청(preflight) 없이 GAS 에 도달합니다.
+      const res = await fetch(GAS_WEB_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          token: API_TOKEN,
+          id: memo.id,
+          tripId: TRIP.id,
+          tripTitle: TRIP.title,
+          datetime: memo.datetime,
+          author: memo.author,
+          category: memo.category,
+          related: memo.related,
+          content: memo.content,
+          createdAt: memo.createdAt,
+          userAgent: navigator.userAgent
+        }),
+        redirect: 'follow',
+        signal: ctrl.signal
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error || '서버 오류');
+      return true;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  function setLoading(on) {
+    $('submitBtn').disabled = on;
+    $('spinner').classList.toggle('hidden', !on);
+    $('submitLabel').textContent = on ? '저장 중...' : '구글 시트로 전송';
+  }
+
+  /** ① 기기에 먼저 저장 → ② 구글 시트로 전송 */
+  async function saveAndSend(fields) {
+    const memo = { id: uuid(), ...fields, createdAt: new Date().toISOString(), status: 'pending' };
+    setMemos([memo, ...getMemos()]);
+    renderHistory();
+
+    setLoading(true);
+    try {
+      await sendToSheet(memo);
+      updateMemo(memo.id, { status: 'sent', sentAt: new Date().toISOString(), error: '' });
+      toast('구글 시트에 저장되었습니다', 'success');
+    } catch (err) {
+      updateMemo(memo.id, { status: 'pending', error: friendlyError(err) });
+      toast(`전송 실패 · 기기에 임시 저장했어요 (${friendlyError(err)})`, 'error');
+    } finally {
+      setLoading(false);
+      renderHistory();
+    }
+  }
+
+  async function onSubmit(e) {
+    e.preventDefault();
+    const datetime = $('memoDatetime').value;
+    const author = $('memoAuthor').value.trim();
+    const content = $('memoContent').value.trim();
+    if (!datetime) return toast('날짜/시간을 입력해 주세요', 'warn', $('memoDatetime'));
+    if (!author) return toast('작성자를 입력해 주세요', 'warn', $('memoAuthor'));
+    if (!content) return toast('내용을 입력해 주세요', 'warn', $('memoContent'));
+
+    const fields = { datetime, author, category, related: $('memoRelated').value, content };
+
+    // 폼 초기화 (작성자·관련 장소는 같은 장소에서 연달아 쓰는 경우가 많아 유지)
+    $('memoContent').value = '';
+    $('memoDatetime').value = localDatetime(new Date());
+    saveDraft();
+
+    await saveAndSend(fields);
+  }
+
+  function friendlyError(err) {
+    if (!navigator.onLine) return '오프라인';
+    if (err?.name === 'AbortError') return '응답 시간 초과';
+    if (err instanceof TypeError) return '네트워크 오류';
+    return err?.message || '알 수 없는 오류';
+  }
+
+  let retrying = false;
+  async function retryPending(silent) {
+    if (retrying) return;
+    const pending = getMemos().filter(m => m.status !== 'sent');
+    if (!pending.length) return;
+    retrying = true;
+    $('retryBtn').disabled = true;
+    $('retryBtn').textContent = '전송 중...';
+    let ok = 0;
+    for (const m of pending.reverse()) { // 오래된 것부터
+      try {
+        await sendToSheet(m);
+        updateMemo(m.id, { status: 'sent', sentAt: new Date().toISOString(), error: '' });
+        ok++;
+      } catch (err) {
+        updateMemo(m.id, { error: friendlyError(err) });
+        break; // 네트워크 문제면 나머지도 실패하므로 중단
+      }
+    }
+    retrying = false;
+    $('retryBtn').disabled = false;
+    $('retryBtn').textContent = '미전송 다시 보내기';
+    renderHistory();
+    const left = getMemos().filter(m => m.status !== 'sent').length;
+    if (ok) toast(`${ok}건이 구글 시트에 저장되었습니다${left ? ` (남은 ${left}건)` : ''}`, 'success');
+    else if (!silent) toast('아직 전송할 수 없습니다. 네트워크를 확인해 주세요', 'error');
+  }
+
+  function renderHistory() {
+    const memos = getMemos();
+    const pending = memos.filter(m => m.status !== 'sent').length;
+    $('historyEmpty').classList.toggle('hidden', memos.length > 0);
+    $('retryBtn').classList.toggle('hidden', pending === 0);
+    $('pendingDot').classList.toggle('hidden', pending === 0);
+    $('pendingDot').textContent = pending;
+
+    $('historyList').innerHTML = memos.slice(0, 30).map(m => {
+      const sent = m.status === 'sent';
+      const tags = [m.category, m.related].filter(Boolean).map(esc).join(' · ');
+      return `
+      <li class="rounded-xl border ${sent ? 'border-slate-200 bg-slate-50' : 'border-amber-300 bg-amber-50'} p-3">
+        <div class="flex items-center justify-between gap-2">
+          <span class="text-xs text-slate-500">${esc(m.datetime.replace('T', ' '))} · ${esc(m.author)}</span>
+          <span class="shrink-0 text-[11px] font-bold rounded-full px-2 py-0.5 ${sent
+            ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-200 text-amber-800'}">${sent ? '전송됨' : '미전송'}</span>
+        </div>
+        ${tags ? `<div class="text-xs text-blue-700 mt-1">🔗 ${tags}</div>` : ''}
+        <p class="text-sm text-slate-800 mt-1 whitespace-pre-wrap break-words">${esc(m.content)}</p>
+        ${!sent && m.error ? `<p class="text-[11px] text-amber-700 mt-1">사유: ${esc(m.error)}</p>` : ''}
+      </li>`;
+    }).join('');
+  }
+
+  /* =====================================================================
+   * 7) 토스트 & 네트워크 상태
+   * ===================================================================== */
+  let toastTimer;
+  function toast(msg, type = 'success', focusEl) {
+    const colors = { success: 'bg-emerald-600', error: 'bg-rose-600', warn: 'bg-amber-600', info: 'bg-slate-800' };
+    const box = $('toastBox');
+    box.className = `rounded-xl px-4 py-3 text-sm font-medium text-white shadow-lg text-center ${colors[type] || colors.info}`;
+    box.textContent = (type === 'success' ? '✅ ' : type === 'error' ? '⚠️ ' : '') + msg;
+    const t = $('toast');
+    t.classList.remove('opacity-0', 'translate-y-4');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.add('opacity-0', 'translate-y-4'), 3000);
+    if (focusEl) focusEl.focus();
+    if (navigator.vibrate && type !== 'info') navigator.vibrate(type === 'success' ? 30 : [40, 60, 40]);
+  }
+
+  function updateNet() {
+    const on = navigator.onLine;
+    const b = $('netBadge');
+    b.textContent = on ? '● 온라인' : '● 오프라인';
+    b.className = `text-xs font-medium rounded-full px-3 py-1 ${on
+      ? 'bg-emerald-400/20 text-emerald-100' : 'bg-rose-400/30 text-rose-100'}`;
+  }
+
+  /* =====================================================================
+   * 8) 초기화
+   * ===================================================================== */
+  const placeOptions = [...new Set(TRIP.places.map(p => p.group))].map(g =>
+    `<optgroup label="${esc(g)}">` +
+    TRIP.places.filter(p => p.group === g).map(p => `<option value="${esc(p.name)}">${esc(p.name)}</option>`).join('') +
+    `</optgroup>`).join('');
+  $('memoRelated').insertAdjacentHTML('beforeend', placeOptions + '<option value="전체 일정">전체 일정 / 기타</option>');
+  $('checkTarget').innerHTML = placeOptions;
+
+  renderOverview();
+  // 오늘 날짜가 일정에 있으면 그 날을 기본 선택
+  renderTabs(Math.max(0, TRIP.schedule.findIndex(d => d.date === localDate(new Date()))));
+  renderPlaces();
+  renderChecklist();
+  restoreDraft();
+  renderChips();
+  renderHistory();
+  updateNet();
+
+  $('memoForm').addEventListener('submit', onSubmit);
+  ['memoDatetime', 'memoRelated', 'memoContent'].forEach(id => $(id).addEventListener('input', saveDraft));
+  $('memoAuthor').addEventListener('input', () => { saveDraft(); renderChips(); });
+  $('nowBtn').addEventListener('click', () => { $('memoDatetime').value = localDatetime(new Date()); saveDraft(); });
+  $('retryBtn').addEventListener('click', () => retryPending(false));
+  $('checkTarget').addEventListener('change', renderChecklist);
+  $('checkSendBtn').addEventListener('click', sendChecklist);
+
+  window.addEventListener('online', () => { updateNet(); toast('다시 연결되었습니다', 'info'); retryPending(true); });
+  window.addEventListener('offline', () => { updateNet(); toast('오프라인 상태입니다. 메모는 기기에 저장됩니다', 'warn'); });
+
+  // 페이지 열 때 미전송분 자동 재전송
+  if (navigator.onLine) setTimeout(() => retryPending(true), 1500);
+  </script>
+</body>
+</html>
